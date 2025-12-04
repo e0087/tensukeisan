@@ -86,10 +86,9 @@
             /* ←ここを wrap→nowrap に変更 */
             justify-content: center;
             align-items: flex-end;
-            gap: 5px;
             margin: 20px 0;
             min-height: 60px;
-            overflow-x: auto;
+            /* overflow-x: auto; */
             /* ← スマホで横スクロール可能に */
         }
 
@@ -240,13 +239,13 @@
         class MahjongQuizApp {
             constructor() {
                 // Unicode牌のマッピング（type => index 1..9 or 1..7）
-                this.tileMap = {
-                    'm': [null, '🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎', '🀏'],
-                    'p': [null, '🀙', '🀚', '🀛', '🀜', '🀝', '🀞', '🀟', '🀠', '🀡'],
-                    's': [null, '🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗', '🀘'],
-                    // z: 1:東 2:南 3:西 4:北 5:白 6:發 7:中
-                    'z': [null, '🀀', '🀁', '🀂', '🀃', '🀆', '🀅', '🀄']
-                };
+                // this.tileMap = {
+                //     'm': [null, '🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎', '🀏'],
+                //     'p': [null, '🀙', '🀚', '🀛', '🀜', '🀝', '🀞', '🀟', '🀠', '🀡'],
+                //     's': [null, '🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗', '🀘'],
+                //     // z: 1:東 2:南 3:西 4:北 5:白 6:發 7:中
+                //     'z': [null, '🀀', '🀁', '🀂', '🀃', '🀆', '🀅', '🀄']
+                // };
                 this.suits = ['m', 'p', 's'];
                 this.honors = [1, 2, 3, 4, 5, 6, 7];
                 this.currentScenario = null;
@@ -296,7 +295,7 @@
             }
 
             toChar(tile) {
-                return `<img src="images/${this.tileToFile(tile)}.png">`;
+                return `<img src="images/${this.tileToFile(tile)}.png" width="12" height="16">`;
             }
 
             // tileコード → ファイル名
@@ -304,10 +303,10 @@
                 const suit = tile[0];
                 const num = tile.slice(1);
 
-                if (suit === 'm') return `man${num}`;
-                if (suit === 'p') return `pin${num}`;
-                if (suit === 's') return `sou${num}`;
-                if (suit === 'z') return `zi${num}`;
+                if (suit === 'm') return `m${num}`;
+                if (suit === 'p') return `p${num}`;
+                if (suit === 's') return `s${num}`;
+                if (suit === 'z') return `z${num}`;
 
                 return "ura"; // 万が一
             }
