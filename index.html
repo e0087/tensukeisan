@@ -83,17 +83,14 @@
         .hand-area {
             display: flex;
             flex-wrap: nowrap;
-            /* ←ここを wrap→nowrap に変更 */
             justify-content: center;
             align-items: flex-end;
             margin: 20px 0;
             min-height: 60px;
-            /* overflow-x: auto; */
-            /* ← スマホで横スクロール可能に */
         }
 
         .tile {
-            width: 48px;
+            width: auto;
             height: 64px;
             display: flex;
             align-items: center;
@@ -125,18 +122,23 @@
             transform: rotate(270deg);
         }
 
+        .tile.winning {
+            border: 2px solid yellow;
+            box-shadow: 0 0 10px yellow;
+        }
+
         .furo-group {
             display: flex;
-            gap: 2px;
-            margin-left: 10px;
+            /* margin-left: 10px; */
             transform: scale(0.9);
             transform-origin: bottom;
         }
 
         .kan-group {
             display: flex;
-            gap: 2px;
-            margin-left: 10px;
+            /* margin-left: 10px; */
+            transform: scale(0.9);
+            transform-origin: bottom;
         }
 
         .controls {
@@ -215,7 +217,7 @@
         </div>
 
         <div class="dora-area">
-            <span class="dora-label">ドラ表示牌（カンドラ含む）</span>
+            <span class="dora-label">ドラ表示牌</span>
             <div id="dora-tiles" style="display:flex; gap:5px; justify-content:center;"></div>
         </div>
 
@@ -238,14 +240,6 @@
     <script>
         class MahjongQuizApp {
             constructor() {
-                // Unicode牌のマッピング（type => index 1..9 or 1..7）
-                // this.tileMap = {
-                //     'm': [null, '🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎', '🀏'],
-                //     'p': [null, '🀙', '🀚', '🀛', '🀜', '🀝', '🀞', '🀟', '🀠', '🀡'],
-                //     's': [null, '🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗', '🀘'],
-                //     // z: 1:東 2:南 3:西 4:北 5:白 6:發 7:中
-                //     'z': [null, '🀀', '🀁', '🀂', '🀃', '🀆', '🀅', '🀄']
-                // };
                 this.suits = ['m', 'p', 's'];
                 this.honors = [1, 2, 3, 4, 5, 6, 7];
                 this.currentScenario = null;
@@ -608,22 +602,41 @@
                 // 手牌表示（簡略：pair -> 閉じセット -> 開放セット）
                 const handContainer = document.getElementById('hand-display');
                 handContainer.innerHTML = '';
-                s.hand.pair.forEach(t => this.addTileToHand(handContainer, t));
-                s.hand.sets.filter(set => !set.isOpen).forEach(set =>
-                    set.tiles.forEach(t => this.addTileToHand(handContainer, t))
-                );
-                // 開放セットは右側にグループで表示
-                const openSets = s.hand.sets.filter(set => set.isOpen);
+                // ツモ or ロン牌
+                const winningTile = s.winTile;
+
+                // 雀頭
+                s.hand.pair.forEach(t => this.addTileToHand(handContainer, t, winningTile));
+
+                // 閉じた面子
+                s.hand.sets
+                    .filter(set => !set.isOpen && !set.isKan)
+                    .forEach(set => set.tiles.forEach(t =>
+                        this.addTileToHand(handContainer, t, winningTile)
+                    ));
+                // 副露は右側にグループで表示
+                const openSets = s.hand.sets.filter(set => set.isOpen || set.isKan);
                 openSets.forEach(set => {
                     const group = document.createElement('div');
-                    group.className = set.type === 'kan' ? 'kan-group' : 'furo-group';
+                    group.className = set.isKan ? 'kan-group' : 'furo-group';
 
-                    set.tiles.forEach(t => {
-                        const img = document.createElement('img');
-                        img.className = 'tile-img';
-                        img.src = `images/${this.toImgFile(t)}`;
-                        group.appendChild(img);
-                    });
+                    if (set.isKan && !set.isOpen) {
+                        // 暗槓の表現：両端を裏返しにする
+                        group.innerHTML = `
+            <div class="tile"><img src="images/ura.png" class="tile-img"></div>
+            <div class="tile"><img src="images/${this.tileToFile(set.tiles[1])}.png" class="tile-img"></div>
+            <div class="tile"><img src="images/${this.tileToFile(set.tiles[2])}.png" class="tile-img"></div>
+            <div class="tile"><img src="images/ura.png" class="tile-img"></div>
+        `;
+                    } else {
+                        // 明槓 or 他の副露
+                        set.tiles.forEach(t => {
+                            const el = document.createElement('div');
+                            el.className = 'tile';
+                            el.innerHTML = `<img src="images/${this.tileToFile(t)}.png" class="tile-img">`;
+                            group.appendChild(el);
+                        });
+                    }
 
                     handContainer.appendChild(group);
                 });
@@ -639,13 +652,20 @@
                 return `${suit}${num}.png`;
             }
 
-            addTileToHand(container, tile) {
-                const img = document.createElement('img');
-                img.className = 'tile-img';
-                img.src = `images/${this.toImgFile(tile)}`;
-                container.appendChild(img);
-            }
+            addTileToHand(container, tile, winningTile = null) {
+                const el = document.createElement('div');
+                el.className = 'tile';
 
+                // 画像表示
+                el.innerHTML = `<img class="tile-img" src="images/${this.tileToFile(tile)}.png">`;
+
+                // ツモ牌 / ロン牌なら光らせる
+                if (tile === winningTile) {
+                    el.classList.add('winning');
+                }
+
+                container.appendChild(el);
+            }
 
             showAnswer() {
                 const r = this.result;
